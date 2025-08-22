@@ -23,9 +23,3 @@ A modern, dark-themed Expo app for managing and presenting church scripture sugg
    ```bash
    npx expo start
    ```
-
-## Customization
-
-- Add more mock suggestions in `mock/mockSuggestions.ts`.
-- Extend state logic in `store/useStore.ts`.
-- Adjust theme/colors in `App.tsx` and styles.

@@ -7,6 +7,7 @@ import HistoryScreen from '../screens/HistoryScreen';
 import SearchScreen from '../screens/SearchScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { StatusBar } from 'expo-status-bar';
+import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
@@ -26,7 +27,7 @@ const darkTheme: Theme = {
 export default function MainApp() {
     return (
         <>
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <Tab.Navigator
                 screenOptions={({ route }) => ({
                     headerShown: false,

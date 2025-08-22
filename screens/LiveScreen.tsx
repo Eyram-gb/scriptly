@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, Text } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, StyleSheet, FlatList, Text, TouchableOpacity } from 'react-native';
+import { Audio } from 'expo-av';
 import { useStore } from '../store/useStore';
 import SuggestionCard from '../components/SuggestionCard';
 
@@ -9,28 +10,62 @@ const LiveScreen: React.FC = () => {
     const acceptSuggestion = useStore((state) => state.acceptSuggestion);
     const pinned = useStore((state) => state.pinned);
 
-    if (suggestions.length === 0) {
-        return (
-            <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No live suggestions.</Text>
-            </View>
-        );
-    }
+    const [recording, setRecording] = useState<Audio.Recording | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+
+    const handleRecord = async () => {
+        if (isRecording) {
+            // Stop recording
+            setIsRecording(false);
+            if (recording) {
+                await recording.stopAndUnloadAsync();
+                setRecording(null);
+            }
+        } else {
+            // Start recording
+            try {
+                const { status } = await Audio.requestPermissionsAsync();
+                if (status !== 'granted') {
+                    alert('Permission to access microphone is required!');
+                    return;
+                }
+                await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+                const rec = new Audio.Recording();
+                await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+                await rec.startAsync();
+                setRecording(rec);
+                setIsRecording(true);
+            } catch (err) {
+                alert('Failed to start recording: ' + err);
+            }
+        }
+    };
 
     return (
-        <FlatList
-            data={suggestions}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-                <SuggestionCard
-                    suggestion={item}
-                    onPin={() => pinSuggestion(item.id)}
-                    onAccept={() => acceptSuggestion(item.id)}
-                    isPinned={pinned.includes(item.id)}
+        <View style={{ flex: 1 }}>
+            <TouchableOpacity style={styles.recordButton} onPress={handleRecord}>
+                <Text style={styles.recordButtonText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
+            </TouchableOpacity>
+            {suggestions.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No live suggestions.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={suggestions}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                        <SuggestionCard
+                            suggestion={item}
+                            onPin={() => pinSuggestion(item.id)}
+                            onAccept={() => acceptSuggestion(item.id)}
+                            isPinned={pinned.includes(item.id)}
+                        />
+                    )}
+                    contentContainerStyle={styles.container}
                 />
             )}
-            contentContainerStyle={styles.container}
-        />
+        </View>
     );
 };
 
@@ -39,6 +74,18 @@ const styles = StyleSheet.create({
         padding: 16,
         backgroundColor: '#000',
         minHeight: '100%',
+    },
+    recordButton: {
+        backgroundColor: '#4CAF50',
+        padding: 16,
+        borderRadius: 32,
+        alignItems: 'center',
+        margin: 16,
+    },
+    recordButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     emptyContainer: {
         flex: 1,
